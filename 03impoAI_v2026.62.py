@@ -1632,6 +1632,8 @@ class App(tk.Tk):
         for fname in os.listdir(folder):
             if not fname.lower().endswith(".pdf"):  # ignoră non-PDF
                 continue
+            if "#" not in fname:
+                continue
             path = os.path.join(folder, fname)
             try:
                 doc = fitz.open(path)
