@@ -1108,7 +1108,7 @@ class CustomLayoutEditor(tk.Toplevel):
             #sc = self.piece_scores.get(it["uid"], 0.0)
             #show_top_message(f"Piesa cu ID-ul: {it['uid']} a fost mutată pe coală.\nPunctaj: {sc:.3f}")
 
-        # 7) & 8) centrează grupul față de interiorul colii
+        # 7) & 8) aliniere finală (centrare globală sau aliniere în jumătatea stângă)
         if self.items:
             min_x = min(p["x"] for p in self.items)
             min_y = min(p["y"] for p in self.items)
@@ -1117,7 +1117,12 @@ class CustomLayoutEditor(tk.Toplevel):
             layout_w = max_x - min_x
             layout_h = max_y - min_y
 
-            dx = max(0.0, (inner_w - layout_w) * 0.5) - min_x
+            if getattr(self, "mode", None) == "paired_same_page" and self.paired_left_w is not None and self.paired_gutter is not None:
+                left_w = float(self.paired_left_w)
+                target_min_x = max(0.0, left_w - layout_w)
+                dx = target_min_x - min_x
+            else:
+                dx = max(0.0, (inner_w - layout_w) * 0.5) - min_x
             dy = max(0.0, (inner_h - layout_h) * 0.5) - min_y
 
             if abs(dx) > 1e-6 or abs(dy) > 1e-6:
@@ -1632,6 +1637,8 @@ class App(tk.Tk):
         for fname in os.listdir(folder):
             if not fname.lower().endswith(".pdf"):  # ignoră non-PDF
                 continue
+            if "#" not in fname:
+                continue
             path = os.path.join(folder, fname)
             try:
                 doc = fitz.open(path)
@@ -1739,9 +1746,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, left_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _align_right_x(v, left_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, left_w, inner_h, gap) ]
         else:
@@ -1750,9 +1754,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, inner_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _center_x(v, inner_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, inner_w, inner_h, gap) ]
 
@@ -1776,7 +1777,8 @@ class App(tk.Tk):
                 if len(variants) >= nvar:
                     break
 
-        if not variants:
+        total_variants = len(variants)
+        if total_variants == 0:
             messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Încercați o coală mai mare sau un gap mai mic.", parent=self)
             return
 

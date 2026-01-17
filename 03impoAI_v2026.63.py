@@ -457,15 +457,20 @@ class CustomLayoutEditor(tk.Toplevel):
         super().__init__(master)
         self.title("Custom layout – aranjare manuală")
 
-        # === Tema & culori uniforme (mov deschis) ===
-        self.bg_color = "#D9C3F0"     # fundal aplicație (și overflow)
-        self.sheet_fill = "#E6E6E6"   # gri doar pentru interiorul colii
+        # === Temă modernă ===
+        self.bg_color = "#F5F6F8"     # fundal aplicație (și overflow)
+        self.sheet_fill = "#FFFFFF"  # interior coală
+        self.text_main = "#1F2937"
+        self.accent = "#4F46E5"
 
         self.configure(bg=self.bg_color)
         style = ttk.Style(self)
         style.configure("Custom.TFrame", background=self.bg_color)
-        style.configure("Custom.TLabel", background=self.bg_color)
-        style.configure("Custom.TButton", padding=6)
+        style.configure("Custom.TLabel", background=self.bg_color, foreground=self.text_main, font=("Segoe UI", 10))
+        style.configure("Custom.TButton", padding=(12, 8), font=("Segoe UI Semibold", 10), relief="flat")
+        style.configure("Custom.Primary.TButton", padding=(12, 8), font=("Segoe UI Semibold", 10),
+                        background=self.accent, foreground="#FFFFFF", relief="flat")
+        style.map("Custom.Primary.TButton", background=[("active", "#4338CA")])
 
         # model
         self.items = [dict(it) for it in items]
@@ -492,8 +497,8 @@ class CustomLayoutEditor(tk.Toplevel):
             self.paired_gutter = None
 
         # culori selecție
-        self.FILL_NORMAL = "#e6f0ff"
-        self.FILL_SELECTED = "#ffccd5"
+        self.FILL_NORMAL = "#E8F0FE"
+        self.FILL_SELECTED = "#FDE2E2"
 
         # permite tras în afara colii
         self.overflow_pt = max(self.inner_w, self.inner_h) * 0.4
@@ -505,10 +510,10 @@ class CustomLayoutEditor(tk.Toplevel):
         toolbar = ttk.Frame(top, style="Custom.TFrame")
         toolbar.pack(fill="x", pady=(0, 8))
         ttk.Button(toolbar, text="Resetează pozițiile", command=self._reset_positions, style="Custom.TButton").pack(side="left")
-        ttk.Button(toolbar, text="Aliniază piesele", command=self._auto_align, style="Custom.TButton").pack(side="left", padx=(8,0))
-        self.btn_save = ttk.Button(toolbar, text="Salvează varianta Custom", command=self._save, style="Custom.TButton")
+        ttk.Button(toolbar, text="Aliniază piesele", command=self._auto_align, style="Custom.Primary.TButton").pack(side="left", padx=(10,0))
+        self.btn_save = ttk.Button(toolbar, text="Salvează varianta Custom", command=self._save, style="Custom.Primary.TButton")
         self.btn_save.pack(side="right")
-        ttk.Button(toolbar, text="Anulează", command=self.destroy, style="Custom.TButton").pack(side="right", padx=(0, 8))
+        ttk.Button(toolbar, text="Anulează", command=self.destroy, style="Custom.TButton").pack(side="right", padx=(0, 10))
 
         # === container pentru canvas ===
         canvas_container = tk.Frame(top, bg=self.bg_color)
@@ -560,7 +565,7 @@ class CustomLayoutEditor(tk.Toplevel):
         self.bg_id = self.canvas.create_rectangle(
             1 + self.pad_side_px, 1 + self.pad_top_px,
             self.cw + 1 + self.pad_side_px, self.ch + 1 + self.pad_top_px,
-            outline="#777", width=1, tags=("sheet",)
+            outline="#CBD5E1", width=1, tags=("sheet",)
         )
 
         # mapări canvas<->model
@@ -1108,7 +1113,7 @@ class CustomLayoutEditor(tk.Toplevel):
             #sc = self.piece_scores.get(it["uid"], 0.0)
             #show_top_message(f"Piesa cu ID-ul: {it['uid']} a fost mutată pe coală.\nPunctaj: {sc:.3f}")
 
-        # 7) & 8) centrează grupul față de interiorul colii
+        # 7) & 8) aliniere finală (centrare globală sau aliniere în jumătatea stângă)
         if self.items:
             min_x = min(p["x"] for p in self.items)
             min_y = min(p["y"] for p in self.items)
@@ -1117,7 +1122,12 @@ class CustomLayoutEditor(tk.Toplevel):
             layout_w = max_x - min_x
             layout_h = max_y - min_y
 
-            dx = max(0.0, (inner_w - layout_w) * 0.5) - min_x
+            if getattr(self, "mode", None) == "paired_same_page" and self.paired_left_w is not None and self.paired_gutter is not None:
+                left_w = float(self.paired_left_w)
+                target_min_x = max(0.0, left_w - layout_w)
+                dx = target_min_x - min_x
+            else:
+                dx = max(0.0, (inner_w - layout_w) * 0.5) - min_x
             dy = max(0.0, (inner_h - layout_h) * 0.5) - min_y
 
             if abs(dx) > 1e-6 or abs(dy) > 1e-6:
@@ -1135,17 +1145,17 @@ class PreviewWindow(tk.Toplevel):
     def __init__(self, master, variants, inner_w, inner_h, preview_scale_pct, on_choose, margin_left_pt, margin_top_pt, gap_pt, mode=None, paired_left_w=None, paired_gutter=None):
         super().__init__(master)
                 
-        # culori de temă (mov unitar pentru fereastră)
-        bg_color = "#D9C3F0"            # fundal fereastră
+        # culori de temă moderne
+        bg_color = "#F5F6F8"            # fundal fereastră
         
         self.configure(bg=bg_color)
 
         # culori carduri (variante)
         self.bg_color = bg_color
-        self.card_bg ="#F7F7F7"
-        self.card_sel_bg = "#d7d7d7"
-        self.card_border = "#BBA3EA"
-        self.card_sel_border = "#5B3AB3"
+        self.card_bg ="#FFFFFF"
+        self.card_sel_bg = "#EEF2FF"
+        self.card_border = "#E5E7EB"
+        self.card_sel_border = "#4F46E5"
 
         
         self.title("Variante impoziție – preview")
@@ -1172,8 +1182,11 @@ class PreviewWindow(tk.Toplevel):
 
         style = ttk.Style(self)
         style.configure("Preview.TFrame", background=bg_color)
-        style.configure("Preview.TButton", font=("TkDefaultFont", 10, "bold"))
-        style.configure("Preview.TLabel", background=bg_color)
+        style.configure("Preview.TButton", font=("Segoe UI Semibold", 10), padding=(12, 8), relief="flat")
+        style.configure("Preview.Primary.TButton", font=("Segoe UI Semibold", 10), padding=(12, 8),
+                        background="#4F46E5", foreground="#FFFFFF", relief="flat")
+        style.map("Preview.Primary.TButton", background=[("active", "#4338CA")])
+        style.configure("Preview.TLabel", background=bg_color, foreground="#1F2937", font=("Segoe UI", 10))
 
         # ---------- Header ----------
         header = ttk.Frame(top, style="Preview.TFrame")
@@ -1181,7 +1194,7 @@ class PreviewWindow(tk.Toplevel):
         ttk.Label(
             header,
             text=f"Am găsit {len(variants)} variante:",
-            font=("TkDefaultFont", 12, "bold"),
+            font=("Segoe UI Semibold", 12),
             style="Preview.TLabel"
         ).pack(anchor="center", pady=(0, 6))
 
@@ -1191,8 +1204,8 @@ class PreviewWindow(tk.Toplevel):
         self.canvas = tk.Canvas(
             container,
             background=bg_color,
-            highlightthickness=1,
-            relief="sunken",
+            highlightthickness=0,
+            relief="flat",
             borderwidth=0
         )
         vs = ttk.Scrollbar(container, orient="vertical", command=self.canvas.yview)
@@ -1217,7 +1230,7 @@ class PreviewWindow(tk.Toplevel):
             inner_btns,
             text="Folosește varianta selectată",
             command=self._accept,
-            style="Preview.TButton"
+            style="Preview.Primary.TButton"
         ).pack(side="left", padx=10)
 
         ttk.Button(
@@ -1413,18 +1426,26 @@ class App(tk.Tk):
         self.title("Imposition Star by IB v47.12.1 - 22.10.2025")
         style = ttk.Style(self)
         try:
-            style.theme_use('clam')
+            style.theme_use("clam")
         except Exception:
             pass
 
-        # === Fundal global mov deschis ===
-        app_bg = "#D9C3F0"
+        # === Fundal global modern (neutru deschis) ===
+        app_bg = "#F5F6F8"
+        text_main = "#1F2937"
+        accent = "#4F46E5"
+        accent_hover = "#4338CA"
         self.configure(bg=app_bg)
         style.configure("TFrame", background=app_bg)
-        style.configure("TLabel", background=app_bg)
-        style.configure("TCheckbutton", background=app_bg)
-        style.configure("TRadiobutton", background=app_bg)
-        style.configure("TButton", padding=6)
+        style.configure("TLabel", background=app_bg, foreground=text_main, font=("Segoe UI", 10))
+        style.configure("TCheckbutton", background=app_bg, foreground=text_main, font=("Segoe UI", 10))
+        style.configure("TRadiobutton", background=app_bg, foreground=text_main, font=("Segoe UI", 10))
+        style.configure("TButton", padding=(14, 8), font=("Segoe UI Semibold", 10), relief="flat")
+        style.configure("Primary.TButton", padding=(14, 8), font=("Segoe UI Semibold", 10),
+                        background=accent, foreground="#FFFFFF", relief="flat")
+        style.map("Primary.TButton", background=[("active", accent_hover)])
+        style.configure("TEntry", padding=6, relief="flat")
+        style.configure("TCombobox", padding=6, relief="flat")
 
 
 
@@ -1459,38 +1480,38 @@ class App(tk.Tk):
         except Exception:
             pass
 
-        root = ttk.Frame(self, padding=12)
+        root = ttk.Frame(self, padding=16)
         root.pack(fill="both", expand=True)
 
         def row(lbl, widget):
             r = row.idx
-            ttk.Label(root, text=lbl).grid(column=0, row=r, sticky="w", padx=(0,8), pady=4)
-            widget.grid(column=1, row=r, sticky="w", pady=4)
+            ttk.Label(root, text=lbl).grid(column=0, row=r, sticky="w", padx=(0,10), pady=6)
+            widget.grid(column=1, row=r, sticky="w", pady=6)
             row.idx += 1
         row.idx = 0
 
-        ttk.Label(root, text="Folder cu PDF-uri (#N):").grid(column=0, row=row.idx, sticky="w", padx=(0,8), pady=4)
+        ttk.Label(root, text="Folder cu PDF-uri (#N):").grid(column=0, row=row.idx, sticky="w", padx=(0,10), pady=6)
         rowf = ttk.Frame(root)
         ent_path = ttk.Entry(rowf, textvariable=self.folder_var, width=60)
         ent_path.grid(column=0, row=0, sticky="we")
-        ttk.Button(rowf, text="Alege...", command=self.choose_folder).grid(column=1, row=0, padx=(6,0))
+        ttk.Button(rowf, text="Alege...", command=self.choose_folder, style="Primary.TButton").grid(column=1, row=0, padx=(8,0))
         rowf.grid_columnconfigure(0, weight=1)
-        rowf.grid(column=1, row=row.idx, sticky="we", pady=4)
+        rowf.grid(column=1, row=row.idx, sticky="we", pady=6)
         row.idx += 1
 
-        ttk.Label(root, text="Format coală:").grid(column=0, row=row.idx, sticky="w", padx=(0,8), pady=4)
+        ttk.Label(root, text="Format coală:").grid(column=0, row=row.idx, sticky="w", padx=(0,10), pady=6)
         rowfmt = ttk.Frame(root)
         cb = ttk.Combobox(rowfmt, values=list(PREDEFINED_SHEETS_MM.keys()), textvariable=self.sheet_var, state="readonly")
         cb.grid(column=0, row=0, sticky="w")
 
-        ttk.Label(rowfmt, text="Lățime coală (cm):").grid(column=1, row=0, sticky="w", padx=(16,6))
+        ttk.Label(rowfmt, text="Lățime coală (cm):").grid(column=1, row=0, sticky="w", padx=(18,8))
         ent_w = ttk.Entry(rowfmt, textvariable=self.custom_w_cm, width=8, justify="center")
         ent_w.grid(column=2, row=0, sticky="w")
 
-        ttk.Label(rowfmt, text="Înălțime coală (cm):").grid(column=3, row=0, sticky="w", padx=(16,6))
+        ttk.Label(rowfmt, text="Înălțime coală (cm):").grid(column=3, row=0, sticky="w", padx=(18,8))
         ent_h = ttk.Entry(rowfmt, textvariable=self.custom_h_cm, width=8, justify="center")
         ent_h.grid(column=4, row=0, sticky="w")
-        rowfmt.grid(column=1, row=row.idx, sticky="w", pady=4)
+        rowfmt.grid(column=1, row=row.idx, sticky="w", pady=6)
         row.idx += 1
 
         def _on_sheet_change(event=None):
@@ -1519,10 +1540,10 @@ class App(tk.Tk):
         row("Grosime linie crop (mm):", small_entry(self.crop_width_mm))
         row("Scalare piese (%):", small_entry(self.scale_pct))
 
-        ttk.Checkbutton(root, text="Permite rotire", variable=self.allow_rot).grid(column=0, row=row.idx, sticky="w", pady=(6,2), columnspan=2)
+        ttk.Checkbutton(root, text="Permite rotire", variable=self.allow_rot).grid(column=0, row=row.idx, sticky="w", pady=(8,4), columnspan=2)
         row.idx += 1
 
-        ttk.Label(root, text="Mod impoziție:").grid(column=0, row=row.idx, sticky="w", pady=(6,2))
+        ttk.Label(root, text="Mod impoziție:").grid(column=0, row=row.idx, sticky="w", pady=(8,4))
         row.idx += 1
         ttk.Radiobutton(root, text="Față pe pagina 1, Verso pe pagina 2", variable=self.mode_var, value=MODE_FRONTS_BACKS_SEPARATE).grid(column=0, row=row.idx, sticky="w", columnspan=2)
         row.idx += 1
@@ -1531,7 +1552,7 @@ class App(tk.Tk):
         ttk.Radiobutton(root, text="Doar Față", variable=self.mode_var, value=MODE_FRONTS_ONLY).grid(column=0, row=row.idx, sticky="w", columnspan=2)
         row.idx += 1
 
-        ttk.Label(root, text="Explorare (enumerare compat)").grid(column=0, row=row.idx, sticky="w", pady=(10,2), columnspan=2)
+        ttk.Label(root, text="Explorare (enumerare compat)").grid(column=0, row=row.idx, sticky="w", pady=(12,4), columnspan=2)
         row.idx += 1
         row("Număr variante (2–100):", small_entry(self.num_variants))
         row("Limită combinații testate:", small_entry(self.limit_combos))
@@ -1539,8 +1560,8 @@ class App(tk.Tk):
         row("Seed (random):", small_entry(self.rng_seed))
 
         btns = ttk.Frame(root)
-        btns.grid(column=0, row=row.idx, columnspan=2, pady=(10,0))
-        ttk.Button(btns, text="Generează VARIANTE (preview)", command=self.preview_variants).pack(side="left", padx=(0,8))
+        btns.grid(column=0, row=row.idx, columnspan=2, pady=(14,0))
+        ttk.Button(btns, text="Generează VARIANTE (preview)", command=self.preview_variants, style="Primary.TButton").pack(side="left", padx=(0,10))
         ttk.Button(btns, text="Generează PDF final (cu varianta selectată)", command=self.run_final).pack(side="left")
         row.idx += 1
 
@@ -1631,6 +1652,8 @@ class App(tk.Tk):
 
         for fname in os.listdir(folder):
             if not fname.lower().endswith(".pdf"):  # ignoră non-PDF
+                continue
+            if "#" not in fname:
                 continue
             path = os.path.join(folder, fname)
             try:
@@ -1739,9 +1762,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, left_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _align_right_x(v, left_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, left_w, inner_h, gap) ]
         else:
@@ -1750,9 +1770,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, inner_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _center_x(v, inner_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, inner_w, inner_h, gap) ]
 
@@ -1776,7 +1793,8 @@ class App(tk.Tk):
                 if len(variants) >= nvar:
                     break
 
-        if not variants:
+        total_variants = len(variants)
+        if total_variants == 0:
             messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Încercați o coală mai mare sau un gap mai mic.", parent=self)
             return
 
@@ -2078,7 +2096,7 @@ class App(tk.Tk):
             pass
 
     def _show_final_dialog(self, out_path, whites_summary_dict):
-        TEAL = "#b8efe6"
+        TEAL = "#F5F6F8"
         win = tk.Toplevel(self)
         win.title("Gata")
         win.configure(bg=TEAL)
@@ -2102,7 +2120,7 @@ class App(tk.Tk):
             lines.append(f"Pag.{pg} Stânga/Dreapta: {L:.1f} / {R:.1f} mm   Sus/Jos: {T:.1f} / {B:.1f} mm")
         msg = "\n".join(lines)
 
-        lbl = tk.Label(frm, text=msg, justify="left", anchor="w", bg=TEAL, wraplength=700)
+        lbl = tk.Label(frm, text=msg, justify="left", anchor="w", bg=TEAL, fg="#1F2937", wraplength=700, font=("Segoe UI", 10))
         lbl.pack(fill="both", expand=True)
 
         ttk.Button(frm, text="OK", command=lambda: self._final_ok(win)).pack(pady=(8,0), anchor="e")

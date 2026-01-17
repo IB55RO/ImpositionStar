@@ -1739,9 +1739,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, left_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _align_right_x(v, left_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, left_w, inner_h, gap) ]
         else:
@@ -1750,9 +1747,6 @@ class App(tk.Tk):
             for it in items:
                 it.setdefault("x", 0.0); it.setdefault("y", 0.0); it.setdefault("rot", False)
             variants = generate_variants_enumerated(items, inner_w, inner_h, allow_rot, nvar, limit, seed, gap)
-            if not variants:
-                messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Ajustați parametrii sau creșteți «Limită combinații».", parent=self)
-                variants = []
             variants = [ _center_x(v, inner_w) for v in variants ]
             variants = [ v for v in variants if _validate_layout(v, inner_w, inner_h, gap) ]
 
@@ -1776,7 +1770,8 @@ class App(tk.Tk):
                 if len(variants) >= nvar:
                     break
 
-        if not variants:
+        total_variants = len(variants)
+        if total_variants == 0:
             messagebox.showwarning("Nicio variantă", "Nu am găsit nicio aranjare pe coală. Încercați o coală mai mare sau un gap mai mic.", parent=self)
             return
 
